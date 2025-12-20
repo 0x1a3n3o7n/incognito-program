@@ -11,6 +11,9 @@ incognito_program = "APQauWUWYf1pd7BwG8xWe2eQT7uhXX4NRnRYQJfnAiYW"
 [programs.devnet]
 incognito_program = "APQauWUWYf1pd7BwG8xWe2eQT7uhXX4NRnRYQJfnAiYW"
 
+[programs.mainnet]
+incognito_program = "APQauWUWYf1pd7BwG8xWe2eQT7uhXX4NRnRYQJfnAiYW"
+
 [provider]
 cluster = "Devnet"
 wallet = "~/.config/solana/id.json"

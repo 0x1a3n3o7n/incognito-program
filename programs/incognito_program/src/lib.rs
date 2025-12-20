@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use anchor_spl::token_interface::{
+    self, Mint, TokenAccount, TokenInterface, TransferChecked,
+};
 use groth16_solana::errors::Groth16Error;
 use groth16_solana::groth16::Groth16Verifier;
 
@@ -66,6 +68,11 @@ pub mod incognito_program {
         nullifier_hash: [u8; 32],
     ) -> Result<()> {
         require_keys_eq!(
+            ctx.accounts.mint.key(),
+            ctx.accounts.state.mint,
+            IncognitoError::InvalidMint
+        );
+        require_keys_eq!(
             ctx.accounts.destination.mint,
             ctx.accounts.state.mint,
             IncognitoError::InvalidMint
@@ -125,17 +132,19 @@ pub mod incognito_program {
             &[state_bump],
         ]];
 
-        token::transfer(
+        token_interface::transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
-                Transfer {
+                TransferChecked {
                     from: ctx.accounts.vault.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.destination.to_account_info(),
                     authority: ctx.accounts.state.to_account_info(),
                 },
                 signer_seeds,
             ),
             ctx.accounts.state.denomination,
+            ctx.accounts.mint.decimals,
         )?;
 
         emit!(WithdrawEvent {
@@ -176,16 +185,18 @@ fn deposit_many_inner(ctx: Context<Deposit>, commitments: Vec<[u8; 32]>) -> Resu
         .checked_mul(commitments.len() as u128)
         .ok_or(IncognitoError::DepositAmountOverflow)? as u64;
 
-    token::transfer(
+    token_interface::transfer_checked(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
-            Transfer {
+            TransferChecked {
                 from: ctx.accounts.depositor_token.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
                 to: ctx.accounts.vault.to_account_info(),
                 authority: ctx.accounts.depositor.to_account_info(),
             },
         ),
         amount,
+        ctx.accounts.mint.decimals,
     )?;
 
     for commitment in commitments {
@@ -229,14 +240,15 @@ pub struct Initialize<'info> {
         seeds = [VAULT_SEED, state.key().as_ref()],
         bump,
         token::mint = mint,
-        token::authority = state
+        token::authority = state,
+        token::token_program = token_program
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
-    pub mint: Account<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
 
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub rent: Sysvar<'info, Rent>,
 }
 
@@ -258,7 +270,7 @@ pub struct Deposit<'info> {
     pub depositor: Signer<'info>,
 
     #[account(mut, constraint = depositor_token.owner == depositor.key())]
-    pub depositor_token: Account<'info, TokenAccount>,
+    pub depositor_token: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         mut,
@@ -268,10 +280,10 @@ pub struct Deposit<'info> {
     pub state: Account<'info, IncognitoState>,
 
     #[account(mut, seeds = [VAULT_SEED, state.key().as_ref()], bump = state.vault_bump)]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
-    pub mint: Account<'info, Mint>,
-    pub token_program: Program<'info, Token>,
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -288,7 +300,7 @@ pub struct ActionWithdraw<'info> {
     pub state: Account<'info, IncognitoState>,
 
     #[account(mut, seeds = [VAULT_SEED, state.key().as_ref()], bump = state.vault_bump)]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init,
@@ -300,10 +312,12 @@ pub struct ActionWithdraw<'info> {
     pub nullifier: Account<'info, Nullifier>,
 
     #[account(mut)]
-    pub destination: Account<'info, TokenAccount>,
+    pub destination: InterfaceAccount<'info, TokenAccount>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
 
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[account]
