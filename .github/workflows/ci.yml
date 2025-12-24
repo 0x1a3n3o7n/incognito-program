@@ -33,6 +33,8 @@ jobs:
             libssl-dev \
             libudev-dev
           sh -c "$(curl -sSfL --retry 5 --retry-connrefused --retry-delay 2 https://release.anza.xyz/stable/install)"
+          # The installer only updates shell profile files; export for this step and future steps.
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
           solana --version
           solana-test-validator --version
