@@ -1,5 +1,5 @@
-import * as anchor from '@coral-xyz/anchor'
-import { Program } from '@coral-xyz/anchor'
+import * as anchorPkg from '@coral-xyz/anchor'
+import type { Program } from '@coral-xyz/anchor'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import {
   TOKEN_PROGRAM_ID,
@@ -11,6 +11,8 @@ import {
 import { expect } from 'chai'
 import fs from 'fs'
 import path from 'path'
+
+const anchor = (anchorPkg as any).default ?? anchorPkg
 
 function pda(programId: PublicKey, seeds: (Buffer | Uint8Array)[]) {
   return PublicKey.findProgramAddressSync(seeds, programId)[0]
@@ -31,7 +33,7 @@ describe('incognito_program v1', () => {
   it('deposit → withdraw succeeds; double-spend fails', async () => {
     const payerKeypair = (provider.wallet as any).payer as Keypair
 
-    const fixturePath = path.resolve(__dirname, './fixtures/withdraw_v1_fixture.json')
+    const fixturePath = path.resolve(process.cwd(), 'tests/fixtures/withdraw_v1_fixture.json')
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8')) as WithdrawV1Fixture
 
     expect(fixture.proofBytes).to.have.length(256)

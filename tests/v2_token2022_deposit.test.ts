@@ -1,5 +1,5 @@
-import * as anchor from '@coral-xyz/anchor'
-import { Program } from '@coral-xyz/anchor'
+import * as anchorPkg from '@coral-xyz/anchor'
+import type { Program } from '@coral-xyz/anchor'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import {
   TOKEN_2022_PROGRAM_ID,
@@ -9,6 +9,8 @@ import {
   getAccount,
 } from '@solana/spl-token'
 import { expect } from 'chai'
+
+const anchor = (anchorPkg as any).default ?? anchorPkg
 
 function pda(programId: PublicKey, seeds: (Buffer | Uint8Array)[]) {
   return PublicKey.findProgramAddressSync(seeds, programId)[0]
