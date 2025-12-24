@@ -23,10 +23,20 @@ jobs:
         run: |
           yarn install --frozen-lockfile || yarn install
 
-      - name: Install Solana
-        uses: solana-labs/setup-solana@v1
-        with:
-          solana-version: stable
+      - name: Install Solana (CLI + local validator)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            build-essential \
+            libssl-dev \
+            libudev-dev
+          sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          solana --version
+          solana-test-validator --version
 
       - name: Install Anchor
         run: cargo +stable install --git https://github.com/coral-xyz/anchor avm --locked && avm install latest && avm use latest
