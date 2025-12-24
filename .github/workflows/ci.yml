@@ -32,7 +32,7 @@ jobs:
             build-essential \
             libssl-dev \
             libudev-dev
-          sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+          sh -c "$(curl -sSfL --retry 5 --retry-connrefused --retry-delay 2 https://release.anza.xyz/stable/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
           solana --version
           solana-test-validator --version
