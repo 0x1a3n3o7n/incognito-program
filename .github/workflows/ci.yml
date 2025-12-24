@@ -16,10 +16,9 @@ jobs:
         with:
           node-version: 20
           cache: yarn
-          cache-dependency-path: incognito-program/yarn.lock
+          cache-dependency-path: yarn.lock
 
       - name: Install dependencies
-        working-directory: incognito-program
         run: |
           yarn install --frozen-lockfile || yarn install
 
@@ -42,12 +41,10 @@ jobs:
         run: cargo +stable install --git https://github.com/coral-xyz/anchor avm --locked && avm install latest && avm use latest
 
       - name: Rust fmt + clippy
-        working-directory: incognito-program
         run: |
           cargo +stable fmt --all -- --check
           cargo +stable clippy --all-targets
 
       - name: Anchor tests (localnet)
-        working-directory: incognito-program
         run: |
           anchor test
